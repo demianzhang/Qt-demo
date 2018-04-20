@@ -23,7 +23,7 @@ Widget::Widget(QWidget *parent) :
     m_mediaPlayer = new QMediaPlayer(this, QMediaPlayer::VideoSurface);
     QVideoWidget *videoWidget = new QVideoWidget;
     QBoxLayout * layout_video = new QVBoxLayout;
-    layout_video->setMargin(1);
+    layout_video->setMargin(0);
     videoWidget->resize(ui->label_player->size());
     layout_video->addWidget(videoWidget);
     ui->label_player->setLayout(layout_video);
@@ -57,7 +57,6 @@ Widget::Widget(QWidget *parent) :
     layout->setContentsMargins(0,0,0,0);
     layout->addWidget(chartView);
     ui->label2->setLayout(layout);
-    timerId = startTimer(200);
     qsrand(QDateTime::currentDateTime().toTime_t());
 
     connect(m_mediaPlayer, &QMediaPlayer::stateChanged,this, &Widget::mediaStateChanged);
@@ -98,9 +97,11 @@ void Widget::play()
     switch (m_mediaPlayer->state()) {
     case QMediaPlayer::PlayingState:
         m_mediaPlayer->pause();
+        timerId = -1;
         break;
     default:
         m_mediaPlayer->play();
+        timerId = startTimer(200);
         break;
     }
 }
