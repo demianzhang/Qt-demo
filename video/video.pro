@@ -25,10 +25,38 @@ DEFINES += QT_DEPRECATED_WARNINGS
 
 SOURCES += \
         main.cpp \
-        widget.cpp
+        widget.cpp \
+    control.cpp \
+    processingthread.cpp \
+    global.cpp
 
 HEADERS += \
-        widget.h
+        widget.h \
+    control.h \
+    processingthread.h \
+    global.h
 
 FORMS += \
         widget.ui
+
+LIBS += -L/media/zjg/workspace/Qt-demo/video/lib/ -lcaffe
+
+LIBS += -lopenpose \
+
+LIBS += -lopencv_core \
+-lopencv_imgproc \
+-lopencv_highgui \
+-lopencv_ml \
+-lopencv_video \
+-lopencv_features2d \
+-lopencv_calib3d \
+-lopencv_objdetect \
+-lopencv_contrib \
+-lopencv_legacy \
+-lopencv_flann \
+
+
+
+LIBS +=  -lgflags
+
+

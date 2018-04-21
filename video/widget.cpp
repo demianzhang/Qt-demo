@@ -1,9 +1,10 @@
 #include "widget.h"
 #include "ui_widget.h"
-
+#include "global.h"
 #include <QDateTime>
 #include <QtWidgets>
 #include <QVideoWidget>
+
 
 Widget::Widget(QWidget *parent) :
     QWidget(parent),
@@ -19,15 +20,16 @@ Widget::Widget(QWidget *parent) :
     //openButton
     connect(ui->openButton, &QAbstractButton::clicked, this, &Widget::openFile);
 
-    //QMediaPlayer & QVideoWidget
-    m_mediaPlayer = new QMediaPlayer(this, QMediaPlayer::VideoSurface);
-    QVideoWidget *videoWidget = new QVideoWidget;
-    QBoxLayout * layout_video = new QVBoxLayout;
-    layout_video->setMargin(0);
-    videoWidget->resize(ui->label_player->size());
-    layout_video->addWidget(videoWidget);
-    ui->label_player->setLayout(layout_video);
-    m_mediaPlayer->setVideoOutput(videoWidget);
+//    //QMediaPlayer & QVideoWidget
+//    m_mediaPlayer = new QMediaPlayer(this, QMediaPlayer::VideoSurface);
+//    QVideoWidget *videoWidget = new QVideoWidget;
+//    QBoxLayout * layout_video = new QVBoxLayout;
+//    layout_video->setMargin(0);
+//    videoWidget->resize(ui->label_player->size());
+//    layout_video->addWidget(videoWidget);
+//    ui->label_player->setLayout(layout_video);
+//    m_mediaPlayer->setVideoOutput(videoWidget);
+
     //Slider
     ui->horizontalSlider->setRange(0, 0);
     connect(ui->horizontalSlider, &QAbstractSlider::sliderMoved,this, &Widget::setPosition);
@@ -35,6 +37,8 @@ Widget::Widget(QWidget *parent) :
     m_errorLabel = new QLabel;
     m_errorLabel->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Maximum);
 
+
+    isplay=0;
     maxSize = 31; // 只存储最新的 31 个数据
     maxX = 1000;
     maxY = 10;
@@ -58,11 +62,15 @@ Widget::Widget(QWidget *parent) :
     layout->addWidget(chartView);
     ui->label2->setLayout(layout);
     qsrand(QDateTime::currentDateTime().toTime_t());
+    
 
-    connect(m_mediaPlayer, &QMediaPlayer::stateChanged,this, &Widget::mediaStateChanged);
-    connect(m_mediaPlayer, &QMediaPlayer::positionChanged, this, &Widget::positionChanged);
-    connect(m_mediaPlayer, &QMediaPlayer::durationChanged, this, &Widget::durationChanged);
-    connect(m_mediaPlayer, QOverload<QMediaPlayer::Error>::of(&QMediaPlayer::error),this, &Widget::handleError);
+    
+
+
+//    connect(m_mediaPlayer, &QMediaPlayer::stateChanged,this, &Widget::mediaStateChanged);
+//    connect(m_mediaPlayer, &QMediaPlayer::positionChanged, this, &Widget::positionChanged);
+//    connect(m_mediaPlayer, &QMediaPlayer::durationChanged, this, &Widget::durationChanged);
+//    connect(m_mediaPlayer, QOverload<QMediaPlayer::Error>::of(&QMediaPlayer::error),this, &Widget::handleError);
 }
 
 Widget::~Widget()
@@ -71,52 +79,38 @@ Widget::~Widget()
 }
 
 
-void Widget::openFile()
-{
-    QFileDialog fileDialog(this);
-    fileDialog.setAcceptMode(QFileDialog::AcceptOpen);
-    fileDialog.setWindowTitle(tr("Open Movie"));
-    QStringList supportedMimeTypes = m_mediaPlayer->supportedMimeTypes();
-    if (!supportedMimeTypes.isEmpty())
-        fileDialog.setMimeTypeFilters(supportedMimeTypes);
-    fileDialog.setDirectory(QStandardPaths::standardLocations(QStandardPaths::MoviesLocation).value(0, QDir::homePath()));
-    if (fileDialog.exec() == QDialog::Accepted)
-        setUrl(fileDialog.selectedUrls().constFirst());
-}
-
-void Widget::setUrl(const QUrl &url)
-{
-    m_errorLabel->setText(QString());
-    setWindowFilePath(url.isLocalFile() ? url.toLocalFile() : QString());
-    m_mediaPlayer->setMedia(url);
-    ui->m_playButton->setEnabled(true);
-}
-
 void Widget::play()
 {
-    switch (m_mediaPlayer->state()) {
-    case QMediaPlayer::PlayingState:
-        m_mediaPlayer->pause();
+    switch (isplay) 
+    {
+     case true:
+        isplay=false;
+        controller->stopProcessingThread();
         timerId = -1;
         break;
-    default:
-        m_mediaPlayer->play();
+     default:
+        controller->connectToVideo();
+        //将处理线程的“产生新的一帧”信号和GUI线程的“更新帧”槽连接
+        connect(controller->processingThread,SIGNAL(newFrame(QImage)),this,SLOT(updateFrame(QImage)));
+	    isplay=1;
         timerId = startTimer(200);
         break;
     }
 }
 
-void Widget::mediaStateChanged(QMediaPlayer::State state)
-{
-    switch(state) {
-    case QMediaPlayer::PlayingState:
-        ui->m_playButton->setIcon(style()->standardIcon(QStyle::SP_MediaPause));
-        break;
-    default:
-        ui->m_playButton->setIcon(style()->standardIcon(QStyle::SP_MediaPlay));
-        break;
-    }
-}
+
+
+//void Widget::mediaStateChanged(QMediaPlayer::State state)
+//{
+//    switch(state) {
+//    case QMediaPlayer::PlayingState:
+//        ui->m_playButton->setIcon(style()->standardIcon(QStyle::SP_MediaPause));
+//        break;
+//    default:
+//        ui->m_playButton->setIcon(style()->standardIcon(QStyle::SP_MediaPlay));
+//        break;
+//    }
+//}
 
 void Widget::positionChanged(qint64 position)
 {
@@ -130,19 +124,52 @@ void Widget::durationChanged(qint64 duration)
 
 void Widget::setPosition(int position)
 {
-    m_mediaPlayer->setPosition(position);
+    //m_mediaPlayer->setPosition(position);
 }
+
+
+//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+void Widget::updateFrame(const QImage &frame)
+{
+    ui->label_player->setPixmap(QPixmap::fromImage(frame));
+} // updateFrame()
+
+void Widget::openFile()
+{
+    QFileDialog fileDialog(this);
+    fileDialog.setAcceptMode(QFileDialog::AcceptOpen);
+    fileDialog.setWindowTitle(tr("Open Movie"));
+    QStringList supportedMimeTypes; //= m_mediaPlayer->supportedMimeTypes();
+    if (!supportedMimeTypes.isEmpty())
+        fileDialog.setMimeTypeFilters(supportedMimeTypes);
+    fileDialog.setDirectory(QStandardPaths::standardLocations(QStandardPaths::MoviesLocation).value(0, QDir::homePath()));
+    if (fileDialog.exec() == QDialog::Accepted)
+        setUrl(fileDialog.selectedUrls().constFirst());
+}
+
+void Widget::setUrl(const QUrl &url)
+{
+    m_errorLabel->setText(QString());
+    setWindowFilePath(url.isLocalFile() ? url.toLocalFile() : QString());
+    //m_mediaPlayer->setMedia(url);
+    std::string s = url.toString().toStdString();
+    cap.open(s.c_str());
+    ui->m_playButton->setEnabled(true);
+}
+
+
 
 void Widget::handleError()
 {
     ui->m_playButton->setEnabled(false);
-    const QString errorString = m_mediaPlayer->errorString();
-    QString message = "Error: ";
-    if (errorString.isEmpty())
-        message += " #" + QString::number(int(m_mediaPlayer->error()));
-    else
-        message += errorString;
-    m_errorLabel->setText(message);
+//    const QString errorString = m_mediaPlayer->errorString();
+//    QString message = "Error: ";
+//    if (errorString.isEmpty())
+//        message += " #" + QString::number(int(m_mediaPlayer->error()));	
+//    else
+//        message += errorString;
+//    m_errorLabel->setText(message);
 }
 
 
