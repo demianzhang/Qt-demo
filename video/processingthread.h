@@ -6,7 +6,10 @@
 #include <QtGui>
 #include <chrono>
 #include <thread>
-
+#include <vector>
+#include <utility>
+#include <QMetaType>
+using namespace std;
 // GFlags: DEFINE_bool, _int32, _int64, _uint64, _double, _string
 #include <gflags/gflags.h>
 // Allow Google Flags in Ubuntu 14
@@ -19,6 +22,8 @@ namespace gflags = google;
 
 
 using namespace cv;
+
+
 
 class ProcessingThread : public QThread
 {
@@ -48,6 +53,7 @@ protected:
 signals:
     void newFrame(const QImage &frame);
     void newName(const QString &name);
+    void newPoint(const vector<pair<float,float> > &);
 };
 
 #endif // PROCESSINGTHREAD_H

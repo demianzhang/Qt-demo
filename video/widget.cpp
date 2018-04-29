@@ -4,7 +4,8 @@
 #include <QDateTime>
 #include <QtWidgets>
 #include <QVideoWidget>
-
+#include <cmath>
+#include <QDebug>
 
 Widget::Widget(QWidget *parent) :
     QWidget(parent),
@@ -86,14 +87,15 @@ void Widget::play()
      case true:
         isplay=false;
         controller->stopProcessingThread();
-        timerId = -1;
+        //timerId = -1;
         break;
      default:
         controller->connectToVideo();
         //将处理线程的“产生新的一帧”信号和GUI线程的“更新帧”槽连接
         connect(controller->processingThread,SIGNAL(newFrame(QImage)),this,SLOT(updateFrame(QImage)));
+        connect(controller->processingThread,SIGNAL(newPoint(vector<pair<float,float>>)),this,SLOT(updatePoint(vector<pair<float,float>>)));
 	    isplay=1;
-        timerId = startTimer(200);
+        timerId = -1;//startTimer(200);
         break;
     }
 }
@@ -134,6 +136,66 @@ void Widget::updateFrame(const QImage &frame)
 {
     ui->label_player->setPixmap(QPixmap::fromImage(frame));
 } // updateFrame()
+
+
+void Widget::updatePoint(const vector<pair<float,float>> & points)
+{
+    float toCompare[12][2];
+
+    toCompare[0][0]=points[4].first-points[3].first;
+    toCompare[0][1]=points[4].second-points[3].second;
+    toCompare[1][0]=points[3].first-points[2].first;
+    toCompare[1][1]=points[3].second-points[2].second;
+    toCompare[2][0]=points[1].first-points[2].first;
+    toCompare[2][1]=points[1].second-points[2].second;
+    toCompare[3][0]=points[5].first-points[1].first;
+    toCompare[3][1]=points[5].second-points[1].second;
+    toCompare[4][0]=points[6].first-points[5].first;
+    toCompare[4][1]=points[6].second-points[5].second;
+    toCompare[5][0]=points[7].first-points[6].first;
+    toCompare[5][1]=points[7].second-points[6].second;
+    toCompare[6][0]=points[8].first-points[1].first;
+    toCompare[6][1]=points[8].second-points[1].second;
+    toCompare[7][0]=points[9].first-points[8].first;
+    toCompare[7][1]=points[9].second-points[8].second;
+    toCompare[8][0]=points[10].first-points[9].first;
+    toCompare[8][1]=points[10].second-points[9].second;
+    toCompare[9][0]=points[11].first-points[1].first;
+    toCompare[9][1]=points[11].second-points[1].second;
+    toCompare[10][0]=points[12].first-points[11].first;
+    toCompare[10][1]=points[12].second-points[11].second;
+    toCompare[11][0]=points[13].first-points[12].first;
+    toCompare[11][1]=points[13].second-points[12].second;
+
+    for(int i=0;i<12;i++)
+    {
+       float tmp = sqrt(toCompare[i][0]*toCompare[i][0]+toCompare[i][1]*toCompare[i][1]);
+       toCompare[i][0]=toCompare[i][0]/tmp;
+       toCompare[i][1]=toCompare[i][1]/tmp;
+       //qDebug() <<"point+" <<toCompare[i][0]<<" "<<toCompare[i][1] ;
+    }
+
+    int maxPoint=-1,maxValue=-1,i;
+    float sum;
+    for(i=poseNum;i<=min(poseNum+2,10);i++)
+    {
+        sum=0;
+        for(int j=0;j<12;j++)
+            sum+=posePoint[i][j][0]*toCompare[j][0]+posePoint[i][j][1]*toCompare[j][1];
+
+        if(maxValue<sum)
+        {
+            maxValue = sum;
+            maxPoint = i;
+        }
+    }
+
+    if(maxValue>=11.9)poseNum=maxPoint+1;
+    if(maxValue<11.9)maxValue=0;
+    int data = max(maxValue-2,0);
+    maxPoint=-1,maxValue=-1;
+    dataReceived(data);
+}
 
 void Widget::openFile()
 {

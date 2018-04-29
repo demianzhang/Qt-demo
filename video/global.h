@@ -19,7 +19,7 @@ extern QMutex stoppedMutex;
 extern volatile bool stopped;
 extern QMutex stoppedMutex1;
 extern volatile bool stopped1;
+extern int poseNum;
 
-
-
+extern float posePoint[11][12][2];
 #endif // GLOBAL_H

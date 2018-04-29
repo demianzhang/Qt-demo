@@ -9,7 +9,9 @@
 #include <QScatterSeries>
 #include <QChart>
 #include <QChartView>
-
+#include <vector>
+#include <utility>
+using namespace std;
 
 namespace Ui {
 class Widget;
@@ -43,6 +45,7 @@ private slots:
     void setPosition(int position);
     void handleError();
     void updateFrame(const QImage &frame);
+    void updatePoint(const vector<pair<float,float> > &);
 
 private:
     Control *controller;

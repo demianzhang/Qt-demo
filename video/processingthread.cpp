@@ -167,6 +167,7 @@ ProcessingThread::ProcessingThread():QThread()
 {
     // Initialize variables
     stopped1=false;
+    qRegisterMetaType<vector<pair<float,float>>>("vector<pair<float,float>>");
 } // ProcessingThread constructor
 
 ProcessingThread::~ProcessingThread()
@@ -276,6 +277,24 @@ void ProcessingThread::run()
         // Step 6 - OpenPose output format to cv::Mat
         auto outputImage = opOutputToCvMat.formatToCvMat(outputArray);
 
+
+
+        //------------------------------处理每一帧的关键点---------------------------------
+        const auto numberPeopleDetected = poseKeypoints.getSize(0);
+        const auto numberBodyParts = poseKeypoints.getSize(1);
+        // Easy version
+        int person=0;
+        if(numberPeopleDetected>1)person=1;
+        vector<pair<float,float> > points;
+        points.clear();
+        for(int i=0;i<=16;i++)
+        {
+            float x = poseKeypoints[{person, i, 0}];
+            float y = poseKeypoints[{person, i, 1}];
+            points.push_back(make_pair(x,y));
+        }
+
+
         // ------------------------- SHOWING RESULT AND CLOSING -------------------------
         // Step 1 - Show results
         //frameDisplayer.displayFrame(outputImage, 0);
@@ -290,7 +309,7 @@ void ProcessingThread::run()
         // Inform GUI thread of new frame (QImage)
         //发出信号，通知GUI线程有新处理好的一帧
         emit newFrame(img);
-
+        emit newPoint(points);
         //ui->label_player->setPixmap(QPixmap::fromImage(img));
 
         //cv::waitKey(1);
