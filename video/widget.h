@@ -10,6 +10,7 @@
 #include <QChart>
 #include <QChartView>
 #include <vector>
+#include <string>
 #include <utility>
 using namespace std;
 
@@ -65,6 +66,7 @@ private:
     /**
      * 接收到数据源发送来的数据，数据源可以下位机，采集卡，传感器等。
      */
+    void putPicture(int num);
     void dataReceived(int value);
     int timerId;
     int maxSize;  // data 最多存储 maxSize 个元素

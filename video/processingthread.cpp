@@ -251,7 +251,8 @@ void ProcessingThread::run()
         /////////////////////////////////
 
         cap>>frame;
-
+        cap>>frame;
+        cap>>frame;
         updateMembersMutex.lock();
 
         cv::Mat inputImage = frame;

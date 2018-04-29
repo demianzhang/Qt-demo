@@ -175,9 +175,9 @@ void Widget::updatePoint(const vector<pair<float,float>> & points)
        //qDebug() <<"point+" <<toCompare[i][0]<<" "<<toCompare[i][1] ;
     }
 
-    int maxPoint=-1,maxValue=-1,i;
-    float sum;
-    for(i=poseNum;i<=min(poseNum+2,10);i++)
+    int maxPoint=-1,i;
+    float sum,maxValue=-1;
+    for(i=poseNum;i<=min(poseNum+0,10);i++)
     {
         sum=0;
         for(int j=0;j<12;j++)
@@ -192,10 +192,23 @@ void Widget::updatePoint(const vector<pair<float,float>> & points)
 
     if(maxValue>=11.9)poseNum=maxPoint+1;
     if(maxValue<11.9)maxValue=0;
-    int data = max(maxValue-2,0);
+    int data = max(int(maxValue-2),0);
     maxPoint=-1,maxValue=-1;
     dataReceived(data);
+    putPicture(poseNum+1);
 }
+
+
+void Widget::putPicture(int num)
+{
+        string name = "/media/zjg/workspace/Qt-demo/video/pic/"+to_string(num)+".jpg";
+        QString filename=QString::fromStdString(name);;
+        QImage* img=new QImage;
+        img->load(filename);
+        //img=img.scaled(200,300);
+        ui->label_pic->setPixmap(QPixmap::fromImage(*img));
+}
+
 
 void Widget::openFile()
 {
