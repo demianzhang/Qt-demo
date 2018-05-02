@@ -190,9 +190,10 @@ void Widget::updatePoint(const vector<pair<float,float>> & points)
         }
     }
 
-    if(maxValue>=11.9)poseNum=maxPoint+1;
-    if(maxValue<11.9)maxValue=0;
-    int data = max(int(maxValue-2),0);
+    if(maxValue>=11.5)poseNum=maxPoint+1;
+    //if(maxValue<11.5)maxValue=0;
+    maxValue=maxValue/12*10;
+    float data = maxValue;
     maxPoint=-1,maxValue=-1;
     dataReceived(data);
     putPicture(poseNum+1);
@@ -205,8 +206,8 @@ void Widget::putPicture(int num)
         QString filename=QString::fromStdString(name);;
         QImage* img=new QImage;
         img->load(filename);
-        //img=img.scaled(200,300);
-        ui->label_pic->setPixmap(QPixmap::fromImage(*img));
+        QImage image=img->scaled(200,400);
+        ui->label_pic->setPixmap(QPixmap::fromImage(image));
 }
 
 
